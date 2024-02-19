@@ -1,0 +1,230 @@
+/** C implementation for
+	Red-Black Tree Insertion
+	 **/
+	 //header files
+#include <stdio.h>
+#include <stdlib.h>
+
+// Structure to represent each
+// node in a red-black tree
+struct node {
+	int data; // data
+	int colour; // 1-black, 0-reed
+	struct node* parent; // parent node
+	struct node* right_child; // right-child node
+	struct node* left_child; // left child node
+};
+
+// global root for the entire tree
+struct node* root = NULL;
+
+// function to perform BST insertion of a node
+struct node* binary_search_tree(struct node* trav, struct node* temp)
+{
+	// If the tree is empty,
+	// return a new node
+	if (trav == NULL)
+		return temp;
+
+	// Otherwise recur down the tree
+	if (temp->data < trav->data)
+	{
+		trav->left_child = binary_search_tree(trav->left_child, temp);
+		trav->left_child->parent = trav;
+	}
+	else if (temp->data > trav->data)
+	{
+		trav->right_child = binary_search_tree(trav->right_child, temp);
+		trav->right_child->parent = trav;
+	}
+
+	// Return the (unchanged) node pointer
+	return trav;
+}
+
+// Function performing right rotation
+// of the passed node
+void rightrotate(struct node* temp)
+{
+	struct node* left = temp->left_child;
+	temp->left_child = left->right_child;
+	if (temp->left_child)
+		temp->left_child->parent = temp;
+	left->parent = temp->parent;
+	if (!temp->parent)
+		root = left;
+	else if (temp == temp->parent->left_child)
+		temp->parent->left_child = left;
+	else
+		temp->parent->right_child = left;
+	left->right_child = temp;
+	temp->parent = left;
+}
+
+// Function performing left rotation
+// of the passed node
+void leftrotate(struct node* temp)
+{
+	struct node* right = temp->right_child;
+	temp->right_child = right->left_child;
+	if (temp->right_child)
+		temp->right_child->parent = temp;
+	right->parent = temp->parent;
+	if (!temp->parent)
+		root = right;
+	else if (temp == temp->parent->left_child)
+		temp->parent->left_child = right;
+	else
+		temp->parent->right_child = right;
+	right->left_child = temp;
+	temp->parent = right;
+}
+
+// This function fixes violations
+// caused by binary search tree insertion
+void fixup(struct node* root, struct node* pt)
+{
+	struct node* parent_pt = NULL;
+	struct node* grand_parent_pt = NULL;
+
+	while ((pt != root) && (pt->colour != 0)
+		&& (pt->parent->colour == 1))
+	{
+		parent_pt = pt->parent;
+		grand_parent_pt = pt->parent;
+
+		/* Case : A
+			Parent of pt is left child
+			of Grand-parent of
+		pt */
+		if (parent_pt == grand_parent_pt->left_child)
+		{
+
+			struct node* uncle_pt = grand_parent_pt->right_child;
+
+			/* Case : 1
+				The uncle of pt is also red
+				Only Recoloring required */
+			if (uncle_pt != NULL && uncle_pt->colour == 1)
+			{
+				grand_parent_pt->colour = 1;
+				parent_pt->colour = 0;
+				uncle_pt->colour = 0;
+				pt = grand_parent_pt;
+			}
+
+			else {
+
+				/* Case : 2
+					pt is right child of its parent
+					Left-rotation required */
+				if (pt == parent_pt->right_child) {
+					leftrotate(parent_pt);
+					pt = parent_pt;
+					parent_pt = pt->parent;
+				}
+
+				/* Case : 3
+					pt is left child of its parent
+					Right-rotation required */
+				rightrotate(grand_parent_pt);
+				int t = parent_pt->colour;
+				parent_pt->colour = grand_parent_pt->colour;
+				grand_parent_pt->colour = t;
+				pt = parent_pt;
+			}
+		}
+
+		/* Case : B
+			Parent of pt is right
+			child of Grand-parent of
+		pt */
+		else {
+			struct node* uncle_pt = grand_parent_pt->left_child;
+
+			/* Case : 1
+				The uncle of pt is also red
+				Only Recoloring required */
+			if ((uncle_pt != NULL) && (uncle_pt->colour == 1))
+			{
+				grand_parent_pt->colour = 1;
+				parent_pt->colour = 0;
+				uncle_pt->colour = 0;
+				pt = grand_parent_pt;
+			}
+			else {
+				/* Case : 2
+				pt is left child of its parent
+				Right-rotation required */
+				if (pt == parent_pt->left_child) {
+					rightrotate(parent_pt);
+					pt = parent_pt;
+					parent_pt = pt->parent;
+				}
+
+				/* Case : 3
+					pt is right child of its parent
+					Left-rotation required */
+				leftrotate(grand_parent_pt);
+				int t = parent_pt->colour;
+				parent_pt->colour = grand_parent_pt->colour;
+				grand_parent_pt->colour = t;
+				pt = parent_pt;
+			}
+		}
+	}
+}
+
+// Function to print inorder traversal
+// of the fixated tree
+void inorder(struct node* trav)
+{
+	int count=1;
+	if (trav == NULL)
+		return;
+	inorder(trav->left_child);
+	printf("\n %d", trav->data);
+	inorder(trav->right_child);
+}
+
+// driver code
+int main()
+{
+	int n,i;
+	printf("\nNumber of elements you want to insert :");
+	scanf("%d",&n);
+	int a[n];
+	for(i=1;i<=n;i++)
+	{
+		printf("\nenter %dth element: ",i);
+		scanf("%d",&a[i]);
+	}
+
+	for (int i = 1; i <= n; i++) {
+
+		// allocating memory to the node and initializing:
+		// 1. color as red
+		// 2. parent, left and right pointers as NULL
+		// 3. data as i-th value in the array
+		struct node* temp = (struct node*)malloc(sizeof(struct node));
+		temp->right_child = NULL;
+		temp->left_child = NULL;
+		temp->parent = NULL;
+		temp->data = a[i];
+		temp->colour = 1;
+
+		// calling function that performs bst insertion of
+		// this newly created node
+		root = binary_search_tree(root, temp);
+
+		// calling function to preserve properties of rb
+		// tree
+		fixup(root, temp);
+		root->colour = 0;
+	}
+
+	printf("Inorder Traversal of Created Tree\n");
+	inorder(root);
+
+	return 0;
+}
